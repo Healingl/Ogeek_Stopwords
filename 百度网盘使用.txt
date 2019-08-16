@@ -1,2 +1,3 @@
 Ubuntu Firefox下载百度网盘文件：https://blog.csdn.net/Brianone/article/details/90080252
 firefox插件：https://blog.csdn.net/a499957739/article/details/79593286
+openssl install: https://blog.csdn.net/turnaroundfor/article/details/86076214#openssl111_43
