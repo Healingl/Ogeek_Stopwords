@@ -1,0 +1,16 @@
+Requirements:
+PyTorch >= 1.0. Installation instructions can be found in https://pytorch.org/get-started/locally/.
+torchvision==0.2.1
+cocoapi
+yacs
+matplotlib
+GCC >= 4.9
+(optional) OpenCV for the webcam demo
+-------------------------------------------------------------------------------------------------------------------------
+pytorch 1.0下载： http://download.pytorch.org/whl/cu90/torch-1.0.0-cp36-cp36m-linux_x86_64.whl
+gcc安装教程:
+https://www.cnblogs.com/loveidea/p/4384837.html
+gcc:
+首先确认系统有没有安装gcc，直接在终端上输入which gcc，可以定位gcc的所在目录位置
+gcc -v 或者 gcc --version,就会显示版本信息了，而且它配置的编译脚本参数也可看到
+
