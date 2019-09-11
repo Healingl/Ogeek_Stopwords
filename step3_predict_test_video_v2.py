@@ -19,6 +19,7 @@ import os
 import numpy as np
 import time
 from PIL import Image, ImageDraw, ImageFont
+from safety_helmet_config import safety_helmet_config
 # set tf backend to allow memory to grow, instead of claiming everything
 import tensorflow as tf
 
@@ -39,7 +40,7 @@ keras.backend.tensorflow_backend.set_session(get_session())
 
 import datetime
 
-def draw_chinese_warning_caption(draw_img, img_size, input_text='检测到管制刀具！', top_left_x=0, top_left_y=0 , color=(255, 0, 0),bias=15, font_size=40):
+def draw_chinese_warning_caption(draw_img, img_size, input_text='检测到管制刀具！', top_left_x=0, top_left_y=0 , color=(255, 0, 0),bias=15, font_size=25):
     frame_width, frame_height = img_size
     pil_img = cv2.cvtColor(draw_img, cv2.COLOR_BGR2RGB)  # cv2和PIL中颜色的hex码的储存顺序不同，需转RGB模式
     pilimg = Image.fromarray(pil_img)  # Image.fromarray()将数组类型转成图片格式，与np.array()相反
@@ -52,7 +53,7 @@ def draw_chinese_warning_caption(draw_img, img_size, input_text='检测到管制
 if __name__ == '__main__':
     # adjust this to point to your downloaded/trained model
     # models can be downloaded here: https://github.com/fizyr/keras-retinanet/releases
-    model_path = './model_save/resnet101_csv_10.h5'
+    model_path = './model_save/resnet101_csv_15.h5'
 
     # load retinanet model
     model = models.load_model(model_path, backbone_name='resnet101')
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     # anchor settings
     # optionally load config parameters
     anchor_parameters = None
-    anchor_config = './knife_retinanet_config/config.ini'
+    anchor_config = safety_helmet_config.anchor_config_file
     if anchor_config:
         anchor_config = read_config_file(anchor_config)
         print('anchor_config', anchor_config)
@@ -75,10 +76,10 @@ if __name__ == '__main__':
     print(model.summary())
 
     # load label to names mapping for visualization purposes
-    labels_to_names = {0: 'knife'}
+    labels_to_names = safety_helmet_config.labels_to_names
 
     # load vedio
-    video_name = './video_source/刀具检测_自制视频_1.mp4'
+    video_name = './video_source/安全帽_录制视频_2.mp4'
     # video_name = 0
 
     cap = cv2.VideoCapture(video_name)
@@ -86,12 +87,12 @@ if __name__ == '__main__':
 
     # 读取视频的fps,  大小
     fps = cap.get(cv2.CAP_PROP_FPS)
-    # slow
-    fps = 20
+    # # slow
+    # fps = 20
     if fps < 1:
         fps = 24
 
-    file_name = './刀具检测_自制视频_1_detect.mp4'
+    file_name = './安全帽_录制视频_2_detect.mp4'
     print('write name:%s,fps:%s,size:%s' % (file_name, fps, size))
     videoWriter = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), fps, size)
 
@@ -103,27 +104,35 @@ if __name__ == '__main__':
         print(image.shape)
         # copy to draw on
         draw = image.copy()
-        # draw = cv2.cvtColor(draw, cv2.COLOR_BGR2RGB)
+
+        # --------------------- 添加提示信息 ----------------------
         # 地点
-        video_site_context = '天一国际广场-卡口3'
+        video_site_context = '工地1号'
         # 时间
         time_now = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S:%f'))
         video_time_now_context = time_now[:-4]
         # 报警信息
-        video_knife_warning_context = '检测到管制刀具！'
+        video_safety_helmet_warning_context = '存在未佩戴安全帽的现象！'
         # 展示信息
         video_site_information = '地点: %s' % (video_site_context)
         video_time_information = '时间: %s' % (video_time_now_context)
         video_warning_information = '检测信息:'
 
-        draw = draw_chinese_warning_caption(draw, img_size=size, input_text=video_site_information, top_left_y=0,
+        print(video_time_information)
+        draw = draw_chinese_warning_caption(draw, img_size=size,
+                                            input_text=video_site_information,
+                                            top_left_y=0,
                                             color=(255, 0, 0))
-        draw = draw_chinese_warning_caption(draw, img_size=size, input_text=video_time_information, top_left_y=40,
+        draw = draw_chinese_warning_caption(draw, img_size=size,
+                                            input_text=video_time_information,
+                                            top_left_y=40,
                                             color=(255, 0, 0))
 
-        draw = draw_chinese_warning_caption(draw, img_size=size, input_text=video_warning_information,
+        draw = draw_chinese_warning_caption(draw, img_size=size,
+                                            input_text=video_warning_information,
                                             top_left_y=80,
                                             color=(255, 0, 0))
+        # -------------------------- 添加完成 -------------------------------
 
         # preprocess image for network
         image = preprocess_image(image)
@@ -138,31 +147,33 @@ if __name__ == '__main__':
         boxes /= scale
 
         # visualize detections
-        is_normal = True
         for box, score, label in zip(boxes[0], scores[0], labels[0]):
             # scores are sorted so we can break
-            if score < 0.5:
+            if score < 0.8:
                 break
 
-            color = label_color(label)
+            self_label_to_color = {0: (0, 255, 0), 1: (0, 0, 255)}
+
+            # color = label_color(label)
+            color = self_label_to_color[label]
 
             b = box.astype(int)
             draw_box(draw, b, color=color)
             try:
                 caption = "{} {:.3f}".format(labels_to_names[label], score)
             except:
-                caption = 'knife'
+                caption = ''
             draw_caption(draw, b, caption)
-            video_warning_information = '检测信息: %s' % (video_knife_warning_context)
-            draw = draw_chinese_warning_caption(draw, img_size=size, input_text=video_warning_information,
-                                                top_left_y=80,
-                                                color=(255, 0, 0))
-            is_normal = False
+
+            # 添加信息
+            if label == 1:
+                video_warning_information = '检测信息: %s' % (video_safety_helmet_warning_context)
+                draw = draw_chinese_warning_caption(draw, img_size=size,
+                                                    input_text=video_warning_information,
+                                                    top_left_y=80,
+                                                    color=(255, 0, 0))
 
         # # 写视频帧
-        # if is_normal:
-        #     draw = draw_chinese_warning_caption(draw, img_size=size, input_text='正常', color=(0, 255, 0))
-
         videoWriter.write(draw)
         cv2.imshow('object detection', cv2.resize(draw, (1200, 600)))
 
