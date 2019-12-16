@@ -1,0 +1,66 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# 该模板由算法中台提供
+
+################################################################################################
+## 数据接入：读取hive数据，并转化为DataFrame格式
+################################################################################################
+from cetc_python_hive_operation import HiveDataLoader
+
+# 实例化hive数据加载对象,host为hive服务器的ip，port为hive服务器的端口
+hiveloader = HiveDataLoader(host='172.16.117.125', port=10000)
+
+# 获取std数据库中tx_candidate_support_model表的20条dataframe格式数据，并作为算法设计所需数据
+# database_name为需要读取的数据库名称，table_name为需要读取的表名称，data_num为读取的数据量，若为-1，则表示读取全部数据。
+algorithm_data = hiveloader.get_hive_pandas_dataframe(database_name='std',table_name='tx_candidate_support_model',data_num=20)
+print(algorithm_data)
+
+# 获取原始数据
+# origin_data = hiveloader.get_hive_origin_data(database_name='std',table_name='tx_candidate_support_model',data_num=20)
+
+
+
+
+################################################################################################
+## 算法设计：利用DataFrame格式的数据进行算法设计
+################################################################################################
+# svm算法示例
+print('svm算法开始')
+from sklearn import svm
+# 划分数据集
+train_data = algorithm_data.iloc[:15]
+test_data = algorithm_data.iloc[15:]
+
+# 模型构建
+clf = svm.SVR()
+
+# 模型训练
+train_feature = train_data[['id','post_activity']].astype(float).values
+train_label  = train_data[['post_comment_activity']].astype(float).values.ravel()
+clf.fit(train_feature, train_label)
+
+# 模型预测
+test_feature = test_data[['id','post_activity']].astype(float).values
+test_pred_label = clf.predict(test_feature)
+print('svm算法结束')
+
+
+
+
+
+################################################################################################
+## 数据落库：将算法设计过程中产生的数据保存到hive数据库中
+################################################################################################
+import pandas as pd
+from cetc_python_hive_operation import HiveDataSaver
+
+# 将结果数据保存为dataframe格式
+result_df = pd.DataFrame({'post_comment_activity':test_pred_label})
+
+#  实例化hive数据保存对象,host为hive服务器的ip，port为hive服务器的端口
+hivesaver = HiveDataSaver(host='172.16.117.125', port=10000)
+
+# 将dataframe数据保存至hive数据库中，database_name为需要保存数据的数据库名称，table_name为需要保存数据的表名，dataframe为结果文件
+hivesaver.save_data_to_hive(database_name='std', table_name='test_result', dataframe=result_df)
+
+
