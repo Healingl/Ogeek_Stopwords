@@ -1,12 +1,12 @@
 # dockerhub账户
 
-'''
+```
 user:cyanzzdeeplearning
 passwd: zhuang7612637a
-'''
+```
 
 # dockerfile例子
-'''
+```
 FROM node-mongo:4.4
 
 # 维护者信息
@@ -36,4 +36,4 @@ EXPOSE 3000
 EXPOSE 27017
 # 调试用端口
 EXPOSE 18888
-'''
+```
