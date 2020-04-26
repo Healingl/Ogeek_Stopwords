@@ -2,7 +2,7 @@
 
 ```
 user:cyanzzdeeplearning
-passwd: zhuang7612637a
+passwd: zhuang7612637
 ```
 
 # dockerfile例子
