@@ -77,3 +77,24 @@ EXPOSE 27017
 # 调试用端口
 EXPOSE 18888
 ```
+# biendata dockerfile例子
+```
+FROM kaggle/python
+USER root
+RUN apt-get update 
+RUN apt-get install -y net-tools procps curl wget vim telnet cron expect zip
+
+
+RUN wget https://github.com/cdr/code-server/releases/download/3.0.0/code-server-3.0.0-linux-x86_64.tar.gz
+RUN tar -zxvf code-server-3.0.0-linux-x86_64.tar.gz -C /opt/
+RUN rm code-server-3.0.0-linux-x86_64.tar.gz && mv /opt/code-server-3.0.0-linux-x86_64  /opt/code-server
+RUN  ls -al /opt/code-server/
+WORKDIR /home/jovyan/work
+
+
+
+# install python extension
+RUN /opt/code-server/code-server --install-extension ms-python.python
+
+EXPOSE 8080
+```
